@@ -111,12 +111,7 @@ func ToModel(d dto.SewerageConnection) *model.SewerageConnection {
 	}
 
 	for _, h := range d.ConnectionHolders {
-		hID := h.ID
-		if hID == "" {
-			hID = uuid.NewString()
-		}
 		m.ConnectionHolders = append(m.ConnectionHolders, model.ConnectionHolder{
-			ID:                   hID,
 			TenantID:             d.TenantID,
 			ConnectionID:         id,
 			Status:               h.Status,
@@ -213,7 +208,6 @@ func ToDTO(m *model.SewerageConnection) dto.SewerageConnection {
 
 	for _, h := range m.ConnectionHolders {
 		d.ConnectionHolders = append(d.ConnectionHolders, dto.OwnerInfo{
-			ID:                  h.ID,
 			UUID:                h.UserID,
 			IsPrimaryOwner:      h.IsPrimaryHolder,
 			OwnerShipPercentage: h.HoldershipPercentage,

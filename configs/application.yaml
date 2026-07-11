@@ -4,10 +4,10 @@ server:
 
 database:
   host: localhost
-  port: 5432
+  port: 35432
   user: postgres
   password: postgres
-  name: rainmaker_new
+  name: rainmaker
   sslmode: disable
 
 pagination:
@@ -16,12 +16,12 @@ pagination:
   defaultOffset: 0
 
 peers:
-  mdmsHost: http://localhost:8094/
+  mdmsHost: http://127.0.0.1:3456/
   mdmsSearchPath: egov-mdms-service/v1/_search
-  propertyHost: https://dev.digit.org/
+  propertyHost: http://127.0.0.1:3466/
   propertySearchPath: property-services/property/_search
-  idgenHost: http://localhost:8088/
+  idgenHost: http://127.0.0.1:3457/
   idgenGeneratePath: egov-idgen/id/_generate
-  userHost: http://localhost:8081/
+  userHost: http://127.0.0.1:3460/
   userSearchPath: user/v1/_search
   userCreateNoValidatePath: user/users/_createnovalidate

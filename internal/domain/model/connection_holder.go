@@ -9,9 +9,8 @@ package model
 // supporting a list — dropped; (2) HoldershipPercentage lives here as numeric,
 // not the Java table's varchar, matching the actual OwnerShipPercentage(Double) model field.
 type ConnectionHolder struct {
-	ID                   string  `gorm:"column:id;primaryKey"`
 	TenantID             string  `gorm:"column:tenantid"`
-	ConnectionID         string  `gorm:"column:connectionid;index"`
+	ConnectionID         string  `gorm:"column:connectionid;primaryKey"`
 	Status               string  `gorm:"column:status"`
 	UserID               string  `gorm:"column:userid"`
 	IsPrimaryHolder      bool    `gorm:"column:isprimaryholder"`
