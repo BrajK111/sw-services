@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
+var defaultHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
 // PostJSON POSTs body as JSON to rawURL (with optional query params) and
 // unmarshals the response into out. A non-2xx status returns an error
