@@ -15,12 +15,21 @@ type RequestInfo struct {
 	AuthToken string    `json:"authToken,omitempty"`
 }
 
+// Role mirrors the DIGIT role object inside userInfo.roles[].
+type Role struct {
+	Code     string `json:"code"`
+	Name     string `json:"name,omitempty"`
+	TenantID string `json:"tenantId,omitempty"`
+}
+
 type UserInfo struct {
 	UUID     string `json:"uuid,omitempty"`
 	UserName string `json:"userName,omitempty"`
 	Type     string `json:"type,omitempty"`
 	TenantID string `json:"tenantId,omitempty"`
+	Roles    []Role `json:"roles,omitempty"`
 }
+
 
 type ResponseInfo struct {
 	APIID    string `json:"apiId,omitempty"`

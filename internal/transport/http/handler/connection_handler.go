@@ -51,6 +51,10 @@ func (h *ConnectionHandler) Update(c *gin.Context) {
 		response.WriteError(c, swerrors.New("EG_SW_INVALID_REQUEST", err.Error()))
 		return
 	}
+	// Inject roles from middleware context — never from the JSON body.
+	if roles, ok := c.Get("sw_user_roles"); ok {
+		req.CallerRoles, _ = roles.([]string)
+	}
 
 	updated, err := h.service.UpdateConnection(req)
 	if err != nil {
@@ -63,6 +67,7 @@ func (h *ConnectionHandler) Update(c *gin.Context) {
 		SewerageConnections: []dto.SewerageConnection{updated},
 	})
 }
+
 
 func (h *ConnectionHandler) bindSearch(c *gin.Context) (dto.RequestInfoWrapper, dto.SearchCriteria, error) {
 	var wrapper dto.RequestInfoWrapper

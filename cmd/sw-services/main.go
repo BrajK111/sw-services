@@ -11,6 +11,7 @@ import (
 	"github.com/egovernments/sw-services-go/internal/repository/postgres"
 	"github.com/egovernments/sw-services-go/internal/service"
 	"github.com/egovernments/sw-services-go/internal/transport/http/handler"
+	"github.com/egovernments/sw-services-go/internal/transport/http/middleware"
 	"github.com/egovernments/sw-services-go/internal/util"
 	"github.com/egovernments/sw-services-go/internal/validator"
 )
@@ -47,12 +48,32 @@ func main() {
 	router := gin.Default()
 	group := router.Group(cfg.Server.ContextPath)
 	{
+		// Public — no auth required.
 		group.GET("/actuator/health", handler.Health)
-		group.POST("/swc/_create", connectionHandler.Create)
-		group.POST("/swc/_update", connectionHandler.Update)
-		group.POST("/swc/_search", connectionHandler.Search)
-		group.POST("/swc/_plainsearch", connectionHandler.PlainSearch)
-		group.POST("/swc/_encryptOldData", connectionHandler.EncryptOldData)
+
+		// CITIZEN, SW_CEMP, SUPERUSER: apply for a new connection.
+		group.POST("/swc/_create",
+			middleware.RequireRole(middleware.RoleCitizen, middleware.RoleSWCEMP, middleware.RoleSuperUser),
+			connectionHandler.Create)
+
+		// Employee roles only: advance the workflow (field inspection → approval → active).
+		group.POST("/swc/_update",
+			middleware.RequireRole(middleware.RoleSWCEMP, middleware.RoleSWFieldInspector, middleware.RoleSWApprover, middleware.RoleSuperUser, middleware.RoleEmployee),
+			connectionHandler.Update)
+
+		// All authenticated roles may search.
+		group.POST("/swc/_search",
+			middleware.RequireRole(middleware.RoleCitizen, middleware.RoleEmployee, middleware.RoleSWCEMP, middleware.RoleSWFieldInspector, middleware.RoleSWApprover, middleware.RoleSuperUser),
+			connectionHandler.Search)
+
+		// Internal use only: SYSTEM, SUPERUSER (called by sw-calculator).
+		group.POST("/swc/_plainsearch",
+			middleware.RequireRole(middleware.RoleSystem, middleware.RoleSuperUser, middleware.RoleSWApprover),
+			connectionHandler.PlainSearch)
+
+		group.POST("/swc/_encryptOldData",
+			middleware.RequireRole(middleware.RoleSuperUser),
+			connectionHandler.EncryptOldData)
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -61,3 +82,5 @@ func main() {
 		log.Fatalf("server exited: %v", err)
 	}
 }
+
+

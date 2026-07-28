@@ -11,6 +11,20 @@ const (
 	StatusInWorkflow Status = "INWORKFLOW"
 )
 
+// ApplicationStatus represents the sewerage connection workflow states.
+// Transitions: INITIATED → PENDING_FOR_FIELD_INSPECTION → PENDING_FOR_APPROVAL → APPROVED → ACTIVE
+type ApplicationStatus string
+
+const (
+	AppStatusInitiated                    ApplicationStatus = "INITIATED"
+	AppStatusPendingForFieldInspection    ApplicationStatus = "PENDING_FOR_FIELD_INSPECTION"
+	AppStatusPendingForApproval           ApplicationStatus = "PENDING_FOR_APPROVAL"
+	AppStatusApproved                     ApplicationStatus = "APPROVED"
+	AppStatusRejected                     ApplicationStatus = "REJECTED"
+	AppStatusConnectionActivated          ApplicationStatus = "CONNECTION_ACTIVATED"
+	AppStatusPendingApprovalForDisconnect ApplicationStatus = "PENDING_APPROVAL_FOR_DISCONNECTION"
+)
+
 type Channel string
 
 const (
@@ -27,3 +41,4 @@ const (
 	RelationshipFather  Relationship = "FATHER"
 	RelationshipHusband Relationship = "HUSBAND"
 )
+

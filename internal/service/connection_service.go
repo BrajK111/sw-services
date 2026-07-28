@@ -11,11 +11,47 @@ import (
 	"github.com/egovernments/sw-services-go/internal/config"
 	"github.com/egovernments/sw-services-go/internal/domain/dto"
 	swerrors "github.com/egovernments/sw-services-go/internal/domain/errors"
+	"github.com/egovernments/sw-services-go/internal/domain/model"
 	"github.com/egovernments/sw-services-go/internal/repository/mapper"
 	"github.com/egovernments/sw-services-go/internal/repository/postgres"
 	"github.com/egovernments/sw-services-go/internal/util"
 	"github.com/egovernments/sw-services-go/internal/validator"
 )
+
+// nextStatus computes the next applicationStatus for a given role.
+// It mirrors the DIGIT sewerage workflow state machine:
+//
+//	CITIZEN / SW_CEMP  →  PENDING_FOR_FIELD_INSPECTION
+//	SW_FIELD_INSPECTOR →  PENDING_FOR_APPROVAL
+//	SW_APPROVER        →  APPROVED  (also activates the connection)
+//	SUPERUSER          →  accepts any status in the incoming request unchanged
+func nextStatus(currentStatus string, callerRoles []string) (string, bool) {
+	roleSet := make(map[string]bool, len(callerRoles))
+	for _, r := range callerRoles {
+		roleSet[r] = true
+	}
+
+	// SUPERUSER may set any status directly — do not override.
+	if roleSet["SUPERUSER"] {
+		return "", false // caller controls the value
+	}
+	if roleSet["SW_APPROVER"] {
+		return string(model.AppStatusApproved), true
+	}
+	if roleSet["SW_FIELD_INSPECTOR"] {
+		return string(model.AppStatusPendingForApproval), true
+	}
+	if roleSet["SW_CEMP"] || roleSet["EMPLOYEE"] {
+		return string(model.AppStatusPendingForFieldInspection), true
+	}
+	// Default: move to the next logical step.
+	switch currentStatus {
+	case string(model.AppStatusInitiated):
+		return string(model.AppStatusPendingForFieldInspection), true
+	default:
+		return "", false
+	}
+}
 
 type ConnectionService struct {
 	repo       *postgres.ConnectionRepository
@@ -139,8 +175,22 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 
 	mapper.MergeIntoModel(existing, incoming)
 
+	// Apply workflow state transition based on caller's role.
+	if next, ok := nextStatus(existing.ApplicationStatus, req.CallerRoles); ok {
+		existing.ApplicationStatus = next
+	} else if incoming.ApplicationStatus != "" {
+		// SUPERUSER or explicit status override — use what the caller sent.
+		existing.ApplicationStatus = incoming.ApplicationStatus
+	}
+
+	// On approval: activate the connection.
+	if existing.ApplicationStatus == string(model.AppStatusApproved) {
+		existing.Status = string(model.StatusActive)
+	}
+
 	if req.DisconnectRequest {
-		existing.Status = "INACTIVE"
+		existing.Status = string(model.StatusInactive)
+		existing.ApplicationStatus = string(model.AppStatusPendingApprovalForDisconnect)
 	}
 
 	if err := s.repo.Update(existing); err != nil {
@@ -153,6 +203,7 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 	}
 	return mapper.ToDTO(refreshed), nil
 }
+
 
 func (s *ConnectionService) normalizePagination(c *dto.SearchCriteria) {
 	if c.Limit <= 0 {
