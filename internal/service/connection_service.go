@@ -175,11 +175,13 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 
 	mapper.MergeIntoModel(existing, incoming)
 
-	// Apply workflow state transition based on caller's role.
-	if next, ok := nextStatus(existing.ApplicationStatus, req.CallerRoles); ok {
+	// Prioritize explicitly requested status (e.g. REJECTED, CANCELLED) over automatic role progression.
+	if incoming.ApplicationStatus != "" && (incoming.ApplicationStatus == string(model.AppStatusRejected) || incoming.ApplicationStatus == "CANCELLED") {
+		existing.ApplicationStatus = incoming.ApplicationStatus
+		existing.Status = string(model.StatusInactive)
+	} else if next, ok := nextStatus(existing.ApplicationStatus, req.CallerRoles); ok {
 		existing.ApplicationStatus = next
 	} else if incoming.ApplicationStatus != "" {
-		// SUPERUSER or explicit status override — use what the caller sent.
 		existing.ApplicationStatus = incoming.ApplicationStatus
 	}
 
@@ -192,6 +194,7 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 		existing.Status = string(model.StatusInactive)
 		existing.ApplicationStatus = string(model.AppStatusPendingApprovalForDisconnect)
 	}
+
 
 	if err := s.repo.Update(existing); err != nil {
 		return dto.SewerageConnection{}, err
