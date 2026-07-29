@@ -646,6 +646,10 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 | 13 | sw-calculator | SW_CEMP | `POST /_calculate` | ✅ 200 demand created |
 | 14 | sw-calculator | CITIZEN | `POST /_applyAdhocTax` | 🔒 **403** (blocked) |
 | 15 | sw-calculator | **SW_APPROVER** | `POST /_applyAdhocTax` | ✅ 200 penalty+rebate applied ⭐ |
+| 16 | sw-services | SW_CEMP | `POST /swc/_update` | ✅ 200 Modify connection details |
+| 17 | sw-services | **SW_APPROVER** | `POST /swc/_update` | ✅ 200 Disconnection request |
+| 18 | sw-services | **SW_APPROVER** | `POST /swc/_update` | ✅ 200 Reject application |
+| 19 | sw-services | CITIZEN | `POST /swc/_search` | ✅ 200 sees REJECTED status |
 
 ---
 
@@ -663,7 +667,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 This workflow is used to make updates to an existing connection (e.g., changing the number of toilets, plumbers, or holder metadata).
 
-### STEP 18 — SW_CEMP / EMPLOYEE Modifies Connection Details
+### STEP 16 — SW_CEMP / EMPLOYEE Modifies Connection Details
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
@@ -703,7 +707,7 @@ Returns the updated connection payload showing `"noOfToilets": 5` and `"noOfWate
 
 This workflow is used to request the disconnection of an existing active connection.
 
-### STEP 19 — SW_APPROVER (ADMIN) Requests Disconnection
+### STEP 17 — SW_APPROVER (ADMIN) Requests Disconnection
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
@@ -746,14 +750,13 @@ This workflow is used to request the disconnection of an existing active connect
 ```
 *(Connection goes INACTIVE and enters disconnection workflow)*
 
-
 ---
 
 ## 🗑️ Admin Action: Reject or Cancel an Application
 
 In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Admin rejects or cancels an application by updating its status.
 
-### STEP 16 — SW_APPROVER (ADMIN) Rejects/Cancels Application
+### STEP 18 — SW_APPROVER (ADMIN) Rejects/Cancels Application
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
@@ -806,7 +809,7 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
 
 ---
 
-### STEP 17 — CITIZEN Searches Connection (Sees REJECTED Status)
+### STEP 19 — CITIZEN Searches Connection (Sees REJECTED Status)
 
 **POST** `http://localhost:8091/sw-services/swc/_search?tenantId=pb.amritsar&applicationNumber=<<APP_NO>>`
 
@@ -834,6 +837,7 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
 
 **Expected Response (200 OK):**
 The connection payload returns with `"applicationStatus": "REJECTED"` and `"status": "INACTIVE"`.
+
 
 
 
