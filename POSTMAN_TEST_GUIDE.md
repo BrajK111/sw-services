@@ -10,14 +10,14 @@
 
 ## 👥 Personas Reference
 
-| Persona | `type` field | `roles[0].code` | What they can do |
-|---------|-------------|-----------------|-----------------|
-| Citizen | `CITIZEN` | `CITIZEN` | Apply for connection, view own status, get fee estimate |
-| Counter Employee | `EMPLOYEE` | `SW_CEMP` | Send application to field inspection |
-| Field Inspector | `EMPLOYEE` | `SW_FIELD_INSPECTOR` | Send application for approval |
-| **Admin / Approver** | `EMPLOYEE` | `SW_APPROVER` | **Final approval** → activates connection, run billing calculations |
-| Super Admin | `EMPLOYEE` | `SUPERUSER` | Unrestricted access to everything |
-| Internal System | `SYSTEM` | `SYSTEM` | Plain search, job scheduler, bulk demand updates |
+| Persona | `type` field | `roles[0].code` | Realistic Testing UUID |
+|---------|-------------|-----------------|------------------------|
+| Citizen | `CITIZEN` | `CITIZEN` | `e1a8a25c-cf6e-49b0-94df-6d7b42022b7c` |
+| Counter Employee | `EMPLOYEE` | `SW_CEMP` | `5b6d9e03-7b40-42cf-90f7-11116de097ab` |
+| Field Inspector | `EMPLOYEE` | `SW_FIELD_INSPECTOR` | `df90c678-bb34-45aa-b892-2222fa102b4d` |
+| **Admin / Approver** | `EMPLOYEE` | `SW_APPROVER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
+| Super Admin | `EMPLOYEE` | `SUPERUSER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
+| Internal System | `SYSTEM` | `SYSTEM` | `00000000-0000-0000-0000-000000000000` |
 
 ---
 
@@ -87,7 +87,7 @@ Body: *(none)*
     "ts": 1720000000000,
     "msgId": "citizen-create-001",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -154,7 +154,7 @@ Body: *(none)*
     "ts": 1720000000000,
     "msgId": "citizen-update-attempt",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -200,7 +200,7 @@ Body: *(none)*
     "ts": 1720000000000,
     "msgId": "cemp-update-001",
     "userInfo": {
-      "uuid": "cemp-uuid-001",
+      "uuid": "5b6d9e03-7b40-42cf-90f7-11116de097ab",
       "userName": "counter_employee",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -244,7 +244,7 @@ Body: *(none)*
     "ts": 1720000000000,
     "msgId": "inspector-update-001",
     "userInfo": {
-      "uuid": "inspector-uuid-001",
+      "uuid": "df90c678-bb34-45aa-b892-2222fa102b4d",
       "userName": "field_inspector",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -272,7 +272,6 @@ Body: *(none)*
 }
 ```
 
-
 ---
 
 ## STEP 6 — SW_APPROVER (ADMIN) Searches for Pending Applications
@@ -289,7 +288,7 @@ Body: *(none)*
     "ts": 1720000000000,
     "msgId": "admin-search",
     "userInfo": {
-      "uuid": "admin-uuid",
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
       "userName": "sw_admin",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -320,7 +319,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "approver-approve-001",
     "userInfo": {
-      "uuid": "approver-uuid-001",
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
       "userName": "sw_admin",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -350,10 +349,9 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ✅ `status: ACTIVE` means the sewerage connection is now live!
 
-
 ---
 
-## STEP 7 — CITIZEN Searches Their Connection
+## STEP 8 — CITIZEN Searches Their Connection
 
 **POST** `http://localhost:8091/sw-services/swc/_search?tenantId=pb.amritsar&applicationNumber=<<APP_NO>>`
 
@@ -367,7 +365,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "citizen-search-001",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -383,13 +381,13 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 8 — CITIZEN Tries Plain Search → ❌ 403 ERROR (Expected)
+## STEP 9 — CITIZEN Tries Plain Search → ❌ 403 ERROR (Expected)
 
 **POST** `http://localhost:8091/sw-services/swc/_plainsearch?tenantId=pb.amritsar`
 
 **What happens:** Plain search is internal/system use only. Citizen gets blocked.
 
-*(Use same CITIZEN RequestInfo from Step 7)*
+*(Use same CITIZEN RequestInfo from Step 8)*
 
 **Expected Response (403 Forbidden):**
 ```json
@@ -406,11 +404,11 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 # PART 2 — sw-calculator-go (Port 8084)
 
-> **Important:** Run these AFTER the connection is `APPROVED` + `ACTIVE` (Step 6 above). Use `applicationNo` from Step 2.
+> **Important:** Run these AFTER the connection is `APPROVED` + `ACTIVE` (Step 7 above). Use `applicationNo` from Step 2.
 
 ---
 
-## STEP 9 — CITIZEN Gets Fee Estimate (Allowed)
+## STEP 10 — CITIZEN Gets Fee Estimate (Allowed)
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_estimate`
 
@@ -424,7 +422,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "citizen-estimate-001",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -464,13 +462,13 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 10 — CITIZEN Tries _calculate → ❌ 403 ERROR (Expected)
+## STEP 11 — CITIZEN Tries _calculate → ❌ 403 ERROR (Expected)
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_calculate`
 
 **What happens:** Only employees/admins can create billing demands. Citizen is blocked.
 
-*(Use same CITIZEN RequestInfo + CalculationCriteria from Step 9)*
+*(Use same CITIZEN RequestInfo + CalculationCriteria from Step 10)*
 
 **Expected Response (403 Forbidden):**
 ```json
@@ -488,7 +486,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 11 — SW_CEMP Runs Calculate (Creates Billing Demand)
+## STEP 12 — SW_CEMP Runs Calculate (Creates Billing Demand)
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_calculate`
 
@@ -502,7 +500,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "cemp-calculate-001",
     "userInfo": {
-      "uuid": "cemp-uuid-001",
+      "uuid": "5b6d9e03-7b40-42cf-90f7-11116de097ab",
       "userName": "counter_employee",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -536,7 +534,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 12 — CITIZEN Tries _applyAdhocTax → ❌ 403 ERROR (Expected)
+## STEP 13 — CITIZEN Tries _applyAdhocTax → ❌ 403 ERROR (Expected)
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_applyAdhocTax`
 
@@ -550,7 +548,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "citizen-adhoc-attempt",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -577,7 +575,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 13 — ⭐ SW_APPROVER (ADMIN) Applies Adhoc Tax/Rebate
+## STEP 14 — ⭐ SW_APPROVER (ADMIN) Applies Adhoc Tax/Rebate
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_applyAdhocTax`
 
@@ -591,7 +589,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "ts": 1720000000000,
     "msgId": "approver-adhoc-001",
     "userInfo": {
-      "uuid": "approver-uuid-001",
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
       "userName": "sw_admin",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -622,8 +620,6 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
   ]
 }
 ```
-
----
 
 ---
 
@@ -680,7 +676,7 @@ This workflow is used to make updates to an existing connection (e.g., changing 
     "ts": 1720000000000,
     "msgId": "modify-connection-001",
     "userInfo": {
-      "uuid": "cemp-uuid-001",
+      "uuid": "5b6d9e03-7b40-42cf-90f7-11116de097ab",
       "userName": "counter_employee",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -720,7 +716,7 @@ This workflow is used to request the disconnection of an existing active connect
     "ts": 1720000000000,
     "msgId": "disconnect-request-001",
     "userInfo": {
-      "uuid": "admin-uuid",
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
       "userName": "sw_admin",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -752,7 +748,7 @@ This workflow is used to request the disconnection of an existing active connect
 
 ---
 
-## 🗑️ Admin Action: Reject or Cancel an Application
+## 🗑️ Action: Reject or Cancel an Application
 
 In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Admin rejects or cancels an application by updating its status.
 
@@ -769,7 +765,7 @@ In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Admin 
     "ts": 1720000000000,
     "msgId": "admin-reject-001",
     "userInfo": {
-      "uuid": "admin-uuid",
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
       "userName": "sw_admin",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
@@ -823,7 +819,7 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
     "ts": 1720000000000,
     "msgId": "citizen-search-rejected",
     "userInfo": {
-      "uuid": "citizen-uuid-001",
+      "uuid": "e1a8a25c-cf6e-49b0-94df-6d7b42022b7c",
       "userName": "john_citizen",
       "type": "CITIZEN",
       "tenantId": "pb.amritsar",
@@ -837,7 +833,3 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
 
 **Expected Response (200 OK):**
 The connection payload returns with `"applicationStatus": "REJECTED"` and `"status": "INACTIVE"`.
-
-
-
-
