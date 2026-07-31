@@ -15,8 +15,8 @@
 | Citizen | `CITIZEN` | `CITIZEN` | `e1a8a25c-cf6e-49b0-94df-6d7b42022b7c` |
 | Counter Employee | `EMPLOYEE` | `SW_CEMP` | `5b6d9e03-7b40-42cf-90f7-11116de097ab` |
 | Field Inspector | `EMPLOYEE` | `SW_FIELD_INSPECTOR` | `df90c678-bb34-45aa-b892-2222fa102b4d` |
-| **Admin / Approver** | `EMPLOYEE` | `SW_APPROVER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
-| Super Admin | `EMPLOYEE` | `SUPERUSER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
+| **Clerk / Approver** | `EMPLOYEE` | `SW_APPROVER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
+| Super Clerk | `EMPLOYEE` | `SUPERUSER` | `8d407ead-21c2-4b41-8d52-e80055e0a74e` |
 | Internal System | `SYSTEM` | `SYSTEM` | `00000000-0000-0000-0000-000000000000` |
 
 ---
@@ -39,7 +39,7 @@ CITIZEN creates application
         ▼
 [PENDING_FOR_APPROVAL]
         │
-   SW_APPROVER (ADMIN) gives final approval ← KEY STEP
+   SW_APPROVER (CLERK) gives final approval ← KEY STEP
         │
         ▼
    [APPROVED] + status = ACTIVE ← connection is live
@@ -47,8 +47,8 @@ CITIZEN creates application
    SW_CEMP runs _calculate → billing demand created
 ```
 
-> ⚠️ **Before admin approves**: CITIZEN cannot update, calculate, or modify anything.
-> ✅ **After admin approves**: Calculation and billing become available.
+> ⚠️ **Before clerk approves**: CITIZEN cannot update, calculate, or modify anything.
+> ✅ **After clerk approves**: Calculation and billing become available.
 
 ---
 
@@ -77,7 +77,7 @@ Body: *(none)*
 
 **POST** `http://localhost:8091/sw-services/swc/_create`
 
-**What happens:** Citizen submits a new sewerage connection application. Status starts as `INITIATED`. Connection is inactive until admin approves.
+**What happens:** Citizen submits a new sewerage connection application. Status starts as `INITIATED`. Connection is inactive until clerk approves.
 
 ```json
 {
@@ -274,11 +274,11 @@ Body: *(none)*
 
 ---
 
-## STEP 6 — SW_APPROVER (ADMIN) Searches for Pending Applications
+## STEP 6 — SW_APPROVER (CLERK) Searches for Pending Applications
 
 **POST** `http://localhost:8091/sw-services/swc/_search?tenantId=pb.amritsar&applicationStatus=PENDING_FOR_APPROVAL`
 
-**What happens:** The Admin/Approver searches for a list of all applications that have been processed by inspectors and are now waiting for final approval.
+**What happens:** The Clerk/Approver searches for a list of all applications that have been processed by inspectors and are now waiting for final approval.
 
 ```json
 {
@@ -286,10 +286,10 @@ Body: *(none)*
     "apiId": "Rainmaker",
     "ver": "01",
     "ts": 1720000000000,
-    "msgId": "admin-search",
+    "msgId": "clerk-search",
     "userInfo": {
       "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
-      "userName": "sw_admin",
+      "userName": "sw_clerk",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
@@ -305,11 +305,11 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 7 — ⭐ SW_APPROVER (ADMIN) Gives Final Approval
+## STEP 7 — ⭐ SW_APPROVER (CLERK) Gives Final Approval
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
-**What happens:** Admin reviews and **approves** the application. This is the key admin action. Status → `APPROVED`, connection status → `ACTIVE`.
+**What happens:** Clerk reviews and **approves** the application. This is the key clerk action. Status → `APPROVED`, connection status → `ACTIVE`.
 
 ```json
 {
@@ -320,7 +320,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "msgId": "approver-approve-001",
     "userInfo": {
       "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
-      "userName": "sw_admin",
+      "userName": "sw_clerk",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
@@ -466,7 +466,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_calculate`
 
-**What happens:** Only employees/admins can create billing demands. Citizen is blocked.
+**What happens:** Only employees/clerks can create billing demands. Citizen is blocked.
 
 *(Use same CITIZEN RequestInfo + CalculationCriteria from Step 10)*
 
@@ -538,7 +538,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_applyAdhocTax`
 
-**What happens:** Only Approvers/Admins can apply penalties/rebates. Citizen blocked.
+**What happens:** Only Approvers/Clerks can apply penalties/rebates. Citizen blocked.
 
 ```json
 {
@@ -575,11 +575,11 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 14 — ⭐ SW_APPROVER (ADMIN) Applies Adhoc Tax/Rebate
+## STEP 14 — ⭐ SW_APPROVER (CLERK) Applies Adhoc Tax/Rebate
 
 **POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_applyAdhocTax`
 
-**What happens:** Admin applies a penalty (e.g. late payment) and/or a rebate to the billing demand.
+**What happens:** Clerk applies a penalty (e.g. late payment) and/or a rebate to the billing demand.
 
 ```json
 {
@@ -590,7 +590,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
     "msgId": "approver-adhoc-001",
     "userInfo": {
       "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
-      "userName": "sw_admin",
+      "userName": "sw_clerk",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
@@ -633,7 +633,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 | 4 | sw-services | CITIZEN | `POST /swc/_update` | 🔒 **403** (blocked) |
 | 5 | sw-services | SW_CEMP | `POST /swc/_update` | ✅ 200 `PENDING_FOR_FIELD_INSPECTION` |
 | 6 | sw-services | SW_FIELD_INSPECTOR | `POST /swc/_update` | ✅ 200 `PENDING_FOR_APPROVAL` |
-| 7 | sw-services | **SW_APPROVER** | `POST /swc/_search` | ✅ 200 Admin gets pending list ⭐ |
+| 7 | sw-services | **SW_APPROVER** | `POST /swc/_search` | ✅ 200 Clerk gets pending list ⭐ |
 | 8 | sw-services | **SW_APPROVER** | `POST /swc/_update` | ✅ 200 `APPROVED` + `ACTIVE` ⭐ |
 | 9 | sw-services | CITIZEN | `POST /swc/_search` | ✅ 200 sees APPROVED status |
 | 10 | sw-services | CITIZEN | `POST /swc/_plainsearch` | 🔒 **403** (blocked) |
@@ -646,6 +646,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 | 17 | sw-services | **SW_APPROVER** | `POST /swc/_update` | ✅ 200 Disconnection request |
 | 18 | sw-services | **SW_APPROVER** | `POST /swc/_update` | ✅ 200 Reject application |
 | 19 | sw-services | CITIZEN | `POST /swc/_search` | ✅ 200 sees REJECTED status |
+| 20 | sw-calculator | **SYSTEM** | `POST /_jobscheduler` | ✅ 200 Bulk demand for Non-Metered connections ⭐ |
 
 ---
 
@@ -655,7 +656,8 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 2. **Set up a collection variable** `app_no` — copy `applicationNo` from Step 3.
 3. **Use {{conn_id}}** and **{{app_no}}** in subsequent requests.
 4. Steps 3–10 must be run **in order** — each step depends on the previous status.
-5. Steps 11–15 (calculator) require Step 8 (admin approval update) to be done first.
+5. Steps 11–15 (calculator) require Step 8 (clerk approval update) to be done first.
+6. Step 20 (job scheduler) only generates demands for **Non-Metered** connections. If all your test connections are Metered, it returns 200 with `N=0` (nothing to do — this is correct).
 
 ---
 
@@ -663,36 +665,47 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 This workflow is used to make updates to an existing connection (e.g., changing the number of toilets, plumbers, or holder metadata).
 
-### STEP 16 — SW_CEMP / EMPLOYEE Modifies Connection Details
+### STEP 16 — MODIFY WORKFLOW (3 Steps)
 
+This workflow is used to make updates to an existing ACTIVE connection.
+
+#### 16a. SW_CEMP (Employee) INITIATES Modification
 **POST** `http://localhost:8091/sw-services/swc/_update`
-
-**JSON Body:**
 ```json
 {
   "RequestInfo": {
-    "apiId": "Rainmaker",
-    "ver": "01",
-    "ts": 1720000000000,
-    "msgId": "modify-connection-001",
+    "apiId": "Rainmaker", "ver": "01", "ts": 1720000000000, "msgId": "modify-init",
     "userInfo": {
-      "uuid": "5b6d9e03-7b40-42cf-90f7-11116de097ab",
-      "userName": "counter_employee",
-      "type": "EMPLOYEE",
-      "tenantId": "pb.amritsar",
-      "roles": [
-        { "code": "SW_CEMP", "name": "SW Counter Employee", "tenantId": "pb" }
-      ]
+      "uuid": "cemp-uuid-001", "userName": "counter_employee", "type": "EMPLOYEE", "tenantId": "pb.amritsar",
+      "roles": [{ "code": "SW_CEMP", "name": "SW Counter Employee", "tenantId": "pb" }]
     }
   },
   "sewerageConnection": {
     "id": "<<CONNECTION ID>>",
+    "applicationNo": "<<APP_NO>>",
     "tenantId": "pb.amritsar",
     "noOfToilets": 5,
-    "noOfWaterClosets": 3
+    "processInstance": { "action": "INITIATE" }
   }
 }
 ```
+*(Status -> INITIATED)*
+
+#### 16b. SW_CEMP (Employee) SUBMITS Modification
+**POST** `http://localhost:8091/sw-services/swc/_update`
+*(Same body as above, but change action to `SUBMIT_APPLICATION`)*
+```json
+    "processInstance": { "action": "SUBMIT_APPLICATION" }
+```
+*(Status -> PENDING_FOR_APPROVAL)*
+
+#### 16c. SW_APPROVER (Clerk) APPROVES Modification
+**POST** `http://localhost:8091/sw-services/swc/_update`
+*(Same body as above, but change user to `sw_admin`, role to `SW_APPROVER`, and action to `APPROVE_CONNECTION`)*
+```json
+    "processInstance": { "action": "APPROVE_CONNECTION" }
+```
+*(Status -> APPROVED, Toilets -> 5)*
 
 **Expected Response (200 OK):**
 Returns the updated connection payload showing `"noOfToilets": 5` and `"noOfWaterClosets": 3`.
@@ -703,7 +716,7 @@ Returns the updated connection payload showing `"noOfToilets": 5` and `"noOfWate
 
 This workflow is used to request the disconnection of an existing active connection.
 
-### STEP 17 — SW_APPROVER (ADMIN) Requests Disconnection
+### STEP 17 — SW_APPROVER (CLERK) Requests Disconnection
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
@@ -717,7 +730,7 @@ This workflow is used to request the disconnection of an existing active connect
     "msgId": "disconnect-request-001",
     "userInfo": {
       "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
-      "userName": "sw_admin",
+      "userName": "sw_clerk",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
@@ -750,9 +763,9 @@ This workflow is used to request the disconnection of an existing active connect
 
 ## 🗑️ Action: Reject or Cancel an Application
 
-In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Admin rejects or cancels an application by updating its status.
+In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Clerk rejects or cancels an application by updating its status.
 
-### STEP 18 — SW_APPROVER (ADMIN) Rejects/Cancels Application
+### STEP 18 — SW_APPROVER (CLERK) Rejects/Cancels Application
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
@@ -763,10 +776,10 @@ In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Admin 
     "apiId": "Rainmaker",
     "ver": "01",
     "ts": 1720000000000,
-    "msgId": "admin-reject-001",
+    "msgId": "clerk-reject-001",
     "userInfo": {
       "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
-      "userName": "sw_admin",
+      "userName": "sw_clerk",
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
@@ -809,7 +822,7 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
 
 **POST** `http://localhost:8091/sw-services/swc/_search?tenantId=pb.amritsar&applicationNumber=<<APP_NO>>`
 
-**What happens:** When the Citizen searches for their connection application status after the Admin rejected it, they see it reflected as `REJECTED` and `INACTIVE`.
+**What happens:** When the Citizen searches for their connection application status after the Clerk rejected it, they see it reflected as `REJECTED` and `INACTIVE`.
 
 ```json
 {
@@ -833,3 +846,135 @@ DELETE FROM eg_sw_connection WHERE id = '<<CONNECTION ID>>';
 
 **Expected Response (200 OK):**
 The connection payload returns with `"applicationStatus": "REJECTED"` and `"status": "INACTIVE"`.
+
+---
+
+## 🗓️ Bulk Billing: Job Scheduler (Non-Metered Connections)
+
+The job scheduler generates demands automatically for all active **Non-Metered** sewerage
+connections that don't yet have a demand for the current billing cycle.
+
+> **Why it matters:** For Metered connections you call `_calculate` manually per connection.
+> For Non-Metered connections the system bills on a fixed monthly/quarterly cycle — the
+> scheduler does this in bulk without needing individual triggers.
+
+### STEP 20 — SYSTEM Triggers Job Scheduler
+
+**POST** `http://localhost:8084/sw-calculator/sewerageCalculator/_jobscheduler`
+
+> Required Role: **SYSTEM** or **SUPERUSER** — any other role returns 403.
+
+#### Prerequisite — have an active Non-Metered connection
+
+If all your connections are Metered, the scheduler still runs and returns 200 but reports
+`N=0` (nothing to bill). To see it actually generate demands, first create and approve a
+**Non-Metered** connection:
+
+1. Create with `"connectionType": "Non Metered"` via `POST /swc/_create` (CITIZEN)
+2. Walk through the workflow: SW_CEMP → SW_FIELD_INSPECTOR → SW_APPROVER (APPROVE)
+3. Once status is `ACTIVE` the connection has a `connectionNo` — the scheduler picks it up.
+
+---
+
+#### Option A — Trigger for a specific tenant (most common during testing)
+
+**JSON Body:**
+```json
+{
+  "RequestInfo": {
+    "apiId": "Rainmaker",
+    "ver": "1.0",
+    "ts": 1710000000000,
+    "action": "POST",
+    "did": "1",
+    "key": "",
+    "msgId": "scheduler-test-01",
+    "requesterId": "",
+    "authToken": "b1b601f0-4dc6-48c9-847e-8c310fb0c8a6",
+    "userInfo": {
+      "id": 99,
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
+      "userName": "SYSTEM",
+      "name": "System User",
+      "mobileNumber": "9999999999",
+      "tenantId": "pb.amritsar",
+      "type": "SYSTEM",
+      "roles": [
+        { "name": "System", "code": "SYSTEM", "tenantId": "pb.amritsar" }
+      ]
+    }
+  },
+  "BulkBillCriteria": {
+    "tenantIds": ["pb.amritsar"],
+    "offset": 0,
+    "limit": 100
+  }
+}
+```
+
+#### Option B — Auto-discover all tenants (leave tenantIds empty)
+
+The scheduler queries `DISTINCT tenantid` from the database automatically:
+
+**JSON Body:**
+```json
+{
+  "RequestInfo": {
+    "apiId": "Rainmaker",
+    "ver": "1.0",
+    "ts": 1710000000000,
+    "action": "POST",
+    "msgId": "scheduler-all-tenants",
+    "authToken": "b1b601f0-4dc6-48c9-847e-8c310fb0c8a6",
+    "userInfo": {
+      "id": 99,
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
+      "userName": "SYSTEM",
+      "name": "System User",
+      "tenantId": "pb",
+      "type": "SYSTEM",
+      "roles": [
+        { "name": "System", "code": "SYSTEM", "tenantId": "pb" }
+      ]
+    }
+  },
+  "BulkBillCriteria": {}
+}
+```
+
+**Expected Response (200 OK — success):**
+```json
+{
+  "ResponseInfo": {
+    "apiId": "Rainmaker",
+    "ver": "1.0",
+    "ts": 1710000000000,
+    "msgId": "scheduler-test-01",
+    "status": "successful"
+  }
+}
+```
+
+**Error cases:**
+
+| Scenario | HTTP | Error |
+|----------|------|-------|
+| Wrong role (e.g. CITIZEN / SW_CEMP) | 🔒 **403** | `EG_SW_CALC_FORBIDDEN` |
+| Malformed JSON / missing RequestInfo | 400 | `EG_SW_CALC_INVALID_REQUEST` |
+
+**What to look for in the sw-calculator log:**
+```
+INFO: tenant pb.amritsar has <N> connections to process for period <from_ms> - <to_ms>
+```
+- `N > 0` → demands are being generated for Non-Metered connections ✅
+- `N = 0` → no Non-Metered connections need billing this cycle (safe, idempotent) ✅
+
+**What the scheduler does step by step:**
+1. Determines tenants (from `tenantIds` or DB query)
+2. Loads MDMS `BillingPeriod` master → gets current cycle `from`/`to` timestamps
+3. SQL query — finds Non-Metered connections with `connectionno IS NOT NULL` and no
+   existing demand in `egbs_demand_v1` for the period
+4. Fetches those connection details from sw-services in batches of `limit` (default 100)
+5. Calculates sewerage charges + cess for each connection
+6. Creates demands in billing-service (best-effort — failures are logged, not fatal)
+7. Writes an audit row to `eg_sw_bulkbill_audit` per batch

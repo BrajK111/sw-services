@@ -175,10 +175,30 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 
 	mapper.MergeIntoModel(existing, incoming)
 
+	// Determine action if available
+	var action string
+	if incoming.ProcessInstance != nil {
+		action = incoming.ProcessInstance.Action
+	}
+
+	// Detect if this is a modification flow
+	isModification := existing.Status == string(model.StatusActive) || incoming.ApplicationType == "MODIFY_SEWERAGE_CONNECTION"
+
 	// Prioritize explicitly requested status (e.g. REJECTED, CANCELLED) over automatic role progression.
 	if incoming.ApplicationStatus != "" && (incoming.ApplicationStatus == string(model.AppStatusRejected) || incoming.ApplicationStatus == "CANCELLED") {
 		existing.ApplicationStatus = incoming.ApplicationStatus
 		existing.Status = string(model.StatusInactive)
+	} else if isModification {
+		// Strict 3-step Modification Workflow (Java Parity)
+		switch action {
+		case "INITIATE":
+			existing.ApplicationStatus = string(model.AppStatusInitiated)
+		case "SUBMIT_APPLICATION":
+			existing.ApplicationStatus = string(model.AppStatusPendingForApproval)
+		case "APPROVE_CONNECTION":
+			existing.ApplicationStatus = string(model.AppStatusApproved)
+			existing.Status = string(model.StatusActive)
+		}
 	} else if next, ok := nextStatus(existing.ApplicationStatus, req.CallerRoles); ok {
 		existing.ApplicationStatus = next
 	} else if incoming.ApplicationStatus != "" {

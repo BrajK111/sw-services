@@ -1,5 +1,10 @@
 package dto
 
+// ProcessInstance represents the workflow action from the frontend (e.g. INITIATE, SUBMIT_APPLICATION)
+type ProcessInstance struct {
+	Action string `json:"action,omitempty"`
+}
+
 // SewerageConnection is the flat wire-format contract DIGIT-UI/Postman expect
 // — it merges Java's Connection + SewerageConnection inheritance chain into
 // one struct since Go has no class inheritance, and flattens the eg_sw_service
@@ -36,4 +41,5 @@ type SewerageConnection struct {
 	Channel                    string                 `json:"channel,omitempty"`
 	IsDisconnectionTemporary   bool                   `json:"isDisconnectionTemporary"`
 	DisconnectionReason        string                 `json:"disconnectionReason,omitempty"`
+	ProcessInstance            *ProcessInstance       `json:"processInstance,omitempty"`
 }
