@@ -56,9 +56,9 @@ func main() {
 			middleware.RequireRole(middleware.RoleCitizen, middleware.RoleSWCEMP, middleware.RoleSuperUser),
 			connectionHandler.Create)
 
-		// Employee roles only: advance the workflow (field inspection → approval → active).
+		// Employee roles, Citizen, and System: advance the workflow.
 		group.POST("/swc/_update",
-			middleware.RequireRole(middleware.RoleSWCEMP, middleware.RoleSWFieldInspector, middleware.RoleSWApprover, middleware.RoleSuperUser, middleware.RoleEmployee),
+			middleware.RequireRole(middleware.RoleCitizen, middleware.RoleSystem, middleware.RoleSWCEMP, middleware.RoleSWFieldInspector, middleware.RoleSWApprover, middleware.RoleSuperUser, middleware.RoleEmployee),
 			connectionHandler.Update)
 
 		// All authenticated roles may search.

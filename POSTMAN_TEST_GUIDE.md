@@ -265,7 +265,7 @@ Body: *(none)*
 {
   "SewerageConnections": [
     {
-      "applicationStatus": "PENDING_FOR_APPROVAL",
+      "applicationStatus": "PENDING_APPROVAL_FOR_CONNECTION",
       "status": "INACTIVE"
     }
   ]
@@ -293,7 +293,7 @@ Body: *(none)*
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
-        { "code": "SW_APPROVER", "name": "SW Approver", "tenantId": "pb" }
+        { "code": "SW_CLERK", "name": "SW Approver", "tenantId": "pb" }
       ]
     }
   }
@@ -305,11 +305,11 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 7 — ⭐ SW_APPROVER (CLERK) Gives Final Approval
+## STEP 7 — ⭐ SW_CLERK Gives Final Approval
 
 **POST** `http://localhost:8091/sw-services/swc/_update`
 
-**What happens:** Clerk reviews and **approves** the application. This is the key clerk action. Status → `APPROVED`, connection status → `ACTIVE`.
+**What happens:** Clerk reviews and **approves** the application. Status → `PENDING_FOR_PAYMENT`.
 
 ```json
 {
@@ -324,13 +324,14 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
-        { "code": "SW_APPROVER", "name": "SW Approver", "tenantId": "pb" }
+        { "code": "SW_CLERK", "name": "SW Approver", "tenantId": "pb" }
       ]
     }
   },
   "sewerageConnection": {
     "id": "<<CONNECTION ID COPPIED FROM SEARCH OR STEP 2>>",
-    "tenantId": "pb.amritsar"
+    "tenantId": "pb.amritsar",
+    "processInstance": { "action": "APPROVE_FOR_CONNECTION" }
   }
 }
 ```
@@ -340,7 +341,97 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 {
   "SewerageConnections": [
     {
-      "applicationStatus": "APPROVED",
+      "applicationStatus": "PENDING_FOR_PAYMENT",
+      "status": "INACTIVE"
+    }
+  ]
+}
+```
+
+---
+
+## STEP 8 — CITIZEN Pays the connection fee
+
+**POST** `http://localhost:8091/sw-services/swc/_update`
+
+**What happens:** Citizen pays the fee. Status → `PENDING_FOR_CONNECTION_ACTIVATION`.
+
+```json
+{
+  "RequestInfo": {
+    "apiId": "Rainmaker",
+    "ver": "01",
+    "ts": 1720000000000,
+    "msgId": "pay-001",
+    "userInfo": {
+      "uuid": "system-uuid",
+      "userName": "system",
+      "type": "SYSTEM",
+      "tenantId": "pb.amritsar",
+      "roles": [
+        { "code": "SYSTEM", "name": "System", "tenantId": "pb" }
+      ]
+    }
+  },
+  "sewerageConnection": {
+    "id": "<<CONNECTION ID>>",
+    "tenantId": "pb.amritsar",
+    "processInstance": { "action": "PAY" }
+  }
+}
+```
+
+**Expected Response (200 OK):**
+```json
+{
+  "SewerageConnections": [
+    {
+      "applicationStatus": "PENDING_FOR_CONNECTION_ACTIVATION",
+      "status": "INACTIVE"
+    }
+  ]
+}
+```
+
+---
+
+## STEP 9 — SW_CLERK Activates Connection
+
+**POST** `http://localhost:8091/sw-services/swc/_update`
+
+**What happens:** Clerk performs the final step: officially switching the connection to Active.
+
+```json
+{
+  "RequestInfo": {
+    "apiId": "Rainmaker",
+    "ver": "01",
+    "ts": 1720000000000,
+    "msgId": "activate-001",
+    "userInfo": {
+      "uuid": "8d407ead-21c2-4b41-8d52-e80055e0a74e",
+      "userName": "sw_clerk",
+      "type": "EMPLOYEE",
+      "tenantId": "pb.amritsar",
+      "roles": [
+        { "code": "SW_CLERK", "name": "SW Clerk", "tenantId": "pb" }
+      ]
+    }
+  },
+  "sewerageConnection": {
+    "id": "<<CONNECTION ID>>",
+    "tenantId": "pb.amritsar",
+    "processInstance": { "action": "ACTIVATE_CONNECTION" }
+  }
+}
+```
+
+**Expected Response (200 OK):**
+```json
+{
+  "SewerageConnections": [
+    {
+      "applicationStatus": "CONNECTION_ACTIVATED",
       "status": "ACTIVE"
     }
   ]
@@ -351,7 +442,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 8 — CITIZEN Searches Their Connection
+## STEP 10 — CITIZEN Searches Their Connection
 
 **POST** `http://localhost:8091/sw-services/swc/_search?tenantId=pb.amritsar&applicationNumber=<<APP_NO>>`
 
@@ -381,7 +472,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
 
 ---
 
-## STEP 9 — CITIZEN Tries Plain Search → ❌ 403 ERROR (Expected)
+## STEP 11 — CITIZEN Tries Plain Search → ❌ 403 ERROR (Expected)
 
 **POST** `http://localhost:8091/sw-services/swc/_plainsearch?tenantId=pb.amritsar`
 
@@ -594,7 +685,7 @@ Returns the list of connections ready to be approved. Copy the `id` from one of 
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
-        { "code": "SW_APPROVER", "name": "SW Approver", "tenantId": "pb" }
+        { "code": "SW_CLERK", "name": "SW Approver", "tenantId": "pb" }
       ]
     }
   },
@@ -703,7 +794,7 @@ This workflow is used to make updates to an existing ACTIVE connection.
 **POST** `http://localhost:8091/sw-services/swc/_update`
 *(Same body as above, but change user to `sw_admin`, role to `SW_APPROVER`, and action to `APPROVE_CONNECTION`)*
 ```json
-    "processInstance": { "action": "APPROVE_CONNECTION" }
+    "processInstance": { "action": "APPROVE_FOR_CONNECTION" }
 ```
 *(Status -> APPROVED, Toilets -> 5)*
 
@@ -734,7 +825,7 @@ This workflow is used to request the disconnection of an existing active connect
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
-        { "code": "SW_APPROVER", "name": "SW Approver", "tenantId": "pb" }
+        { "code": "SW_CLERK", "name": "SW Approver", "tenantId": "pb" }
       ]
     }
   },
@@ -783,7 +874,7 @@ In the DIGIT system, there is no physical `DELETE` endpoint. Instead, the Clerk 
       "type": "EMPLOYEE",
       "tenantId": "pb.amritsar",
       "roles": [
-        { "code": "SW_APPROVER", "name": "SW Approver", "tenantId": "pb" }
+        { "code": "SW_CLERK", "name": "SW Approver", "tenantId": "pb" }
       ]
     }
   },

@@ -18,40 +18,7 @@ import (
 	"github.com/egovernments/sw-services-go/internal/validator"
 )
 
-// nextStatus computes the next applicationStatus for a given role.
-// It mirrors the DIGIT sewerage workflow state machine:
-//
-//	CITIZEN / SW_CEMP  →  PENDING_FOR_FIELD_INSPECTION
-//	SW_FIELD_INSPECTOR →  PENDING_FOR_APPROVAL
-//	SW_APPROVER        →  APPROVED  (also activates the connection)
-//	SUPERUSER          →  accepts any status in the incoming request unchanged
-func nextStatus(currentStatus string, callerRoles []string) (string, bool) {
-	roleSet := make(map[string]bool, len(callerRoles))
-	for _, r := range callerRoles {
-		roleSet[r] = true
-	}
 
-	// SUPERUSER may set any status directly — do not override.
-	if roleSet["SUPERUSER"] {
-		return "", false // caller controls the value
-	}
-	if roleSet["SW_APPROVER"] {
-		return string(model.AppStatusApproved), true
-	}
-	if roleSet["SW_FIELD_INSPECTOR"] {
-		return string(model.AppStatusPendingForApproval), true
-	}
-	if roleSet["SW_CEMP"] || roleSet["EMPLOYEE"] {
-		return string(model.AppStatusPendingForFieldInspection), true
-	}
-	// Default: move to the next logical step.
-	switch currentStatus {
-	case string(model.AppStatusInitiated):
-		return string(model.AppStatusPendingForFieldInspection), true
-	default:
-		return "", false
-	}
-}
 
 type ConnectionService struct {
 	repo       *postgres.ConnectionRepository
@@ -181,6 +148,11 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 		action = incoming.ProcessInstance.Action
 	}
 
+	roleSet := make(map[string]bool, len(req.CallerRoles))
+	for _, r := range req.CallerRoles {
+		roleSet[r] = true
+	}
+
 	// Detect if this is a modification flow
 	isModification := existing.Status == string(model.StatusActive) || incoming.ApplicationType == "MODIFY_SEWERAGE_CONNECTION"
 
@@ -199,20 +171,58 @@ func (s *ConnectionService) UpdateConnection(req dto.SewerageConnectionRequest) 
 			existing.ApplicationStatus = string(model.AppStatusApproved)
 			existing.Status = string(model.StatusActive)
 		}
-	} else if next, ok := nextStatus(existing.ApplicationStatus, req.CallerRoles); ok {
-		existing.ApplicationStatus = next
-	} else if incoming.ApplicationStatus != "" {
-		existing.ApplicationStatus = incoming.ApplicationStatus
-	}
-
-	// On approval: activate the connection.
-	if existing.ApplicationStatus == string(model.AppStatusApproved) {
-		existing.Status = string(model.StatusActive)
-	}
-
-	if req.DisconnectRequest {
-		existing.Status = string(model.StatusInactive)
-		existing.ApplicationStatus = string(model.AppStatusPendingApprovalForDisconnect)
+	} else if req.DisconnectRequest {
+		// Strict Disconnection Workflow (Java Parity)
+		switch action {
+		case "INITIATE":
+			existing.ApplicationStatus = string(model.AppStatusInitiated)
+		case "SUBMIT_APPLICATION":
+			existing.ApplicationStatus = string(model.AppStatusPendingForFieldInspection)
+		case "VERIFY_AND_FORWARD":
+			existing.ApplicationStatus = "PENDING_APPROVAL_FOR_DISCONNECTION"
+		case "APPROVE_FOR_DISCONNECTION":
+			existing.ApplicationStatus = "PENDING_FOR_PAYMENT"
+		case "PAY":
+			existing.ApplicationStatus = "PENDING_FOR_DISCONNECTION_EXECUTION"
+		case "EXECUTE_DISCONNECTION":
+			if !roleSet["SW_CLERK"] && !roleSet["SUPERUSER"] {
+				return dto.SewerageConnection{}, swerrors.New("EG_SW_ACCESS_DENIED", "only SW_CLERK can execute disconnection")
+			}
+			existing.ApplicationStatus = "DISCONNECTION_EXECUTED"
+			existing.Status = string(model.StatusInactive)
+		default:
+			if incoming.ApplicationStatus != "" {
+				existing.ApplicationStatus = incoming.ApplicationStatus
+			}
+		}
+	} else {
+		// Strict 10-step Creation Workflow (Java Parity)
+		switch action {
+		case "INITIATE":
+			existing.ApplicationStatus = string(model.AppStatusInitiated)
+		case "SUBMIT_APPLICATION":
+			existing.ApplicationStatus = "PENDING_FOR_DOCUMENT_VERIFICATION"
+		case "VERIFY_AND_FORWARD":
+			if existing.ApplicationStatus == "PENDING_FOR_DOCUMENT_VERIFICATION" {
+				existing.ApplicationStatus = string(model.AppStatusPendingForFieldInspection)
+			} else if existing.ApplicationStatus == string(model.AppStatusPendingForFieldInspection) {
+				existing.ApplicationStatus = "PENDING_APPROVAL_FOR_CONNECTION"
+			}
+		case "APPROVE_FOR_CONNECTION":
+			existing.ApplicationStatus = "PENDING_FOR_PAYMENT"
+		case "PAY":
+			existing.ApplicationStatus = "PENDING_FOR_CONNECTION_ACTIVATION"
+		case "ACTIVATE_CONNECTION":
+			if !roleSet["SW_CLERK"] && !roleSet["SUPERUSER"] {
+				return dto.SewerageConnection{}, swerrors.New("EG_SW_ACCESS_DENIED", "only SW_CLERK can activate connection")
+			}
+			existing.ApplicationStatus = "CONNECTION_ACTIVATED"
+			existing.Status = string(model.StatusActive)
+		default:
+			if incoming.ApplicationStatus != "" {
+				existing.ApplicationStatus = incoming.ApplicationStatus
+			}
+		}
 	}
 
 
