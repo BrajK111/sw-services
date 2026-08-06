@@ -1,0 +1,27 @@
+server:
+  port: 8091
+  contextPath: /sw-services
+
+database:
+  host: localhost
+  port: 35432
+  user: postgres
+  password: postgres
+  name: rainmaker
+  sslmode: disable
+
+pagination:
+  defaultLimit: 50
+  maxLimit: 500
+  defaultOffset: 0
+
+peers:
+  mdmsHost: http://127.0.0.1:3456/
+  mdmsSearchPath: egov-mdms-service/v1/_search
+  propertyHost: http://127.0.0.1:3466/
+  propertySearchPath: property-services/property/_search
+  idgenHost: http://127.0.0.1:3457/
+  idgenGeneratePath: egov-idgen/id/_generate
+  userHost: http://127.0.0.1:3460/
+  userSearchPath: user/v1/_search
+  userCreateNoValidatePath: user/users/_createnovalidate

@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "sw-services-go (Phase 1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8091/sw-services" },
+    { "key": "tenantId", "value": "pb.amritsar" },
+    { "key": "propertyId", "value": "PT-2026-07-00001" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" }
+    },
+    {
+      "name": "Create Connection",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/swc/_create",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"RequestInfo\": { \"apiId\": \"sw-services\", \"ver\": \"1.0\" },\n  \"sewerageConnection\": {\n    \"tenantId\": \"{{tenantId}}\",\n    \"propertyId\": \"{{propertyId}}\",\n    \"applicationType\": \"NEW_SEWERAGE_CONNECTION\",\n    \"connectionType\": \"NON_METERED\",\n    \"connectionHolders\": [\n      { \"uuid\": \"user-uuid-1\", \"isPrimaryOwner\": true, \"ownerType\": \"MOHALLA\", \"ownerShipPercentage\": 60 },\n      { \"uuid\": \"user-uuid-2\", \"isPrimaryOwner\": false, \"ownerType\": \"MOHALLA\", \"ownerShipPercentage\": 40 }\n    ],\n    \"plumberInfo\": [\n      { \"name\": \"Ramesh\", \"licenseNo\": \"LIC-001\", \"mobileNumber\": \"9999999999\" }\n    ],\n    \"documents\": [\n      { \"documentType\": \"ID_PROOF\", \"fileStoreId\": \"filestore-id-1\" }\n    ]\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Update Connection",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/swc/_update",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"RequestInfo\": { \"apiId\": \"sw-services\", \"ver\": \"1.0\" },\n  \"sewerageConnection\": {\n    \"id\": \"<connection-id-from-create-response>\",\n    \"tenantId\": \"{{tenantId}}\",\n    \"propertyId\": \"{{propertyId}}\",\n    \"applicationStatus\": \"PENDING_FOR_DOCUMENT_VERIFICATION\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Search by tenantId",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/swc/_search?tenantId={{tenantId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"RequestInfo\": { \"apiId\": \"sw-services\", \"ver\": \"1.0\" }\n}"
+        }
+      }
+    },
+    {
+      "name": "Plain Search",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/swc/_plainsearch?tenantId={{tenantId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"RequestInfo\": { \"apiId\": \"sw-services\", \"ver\": \"1.0\" }\n}"
+        }
+      }
+    },
+    {
+      "name": "Encrypt Old Data (disabled)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/swc/_encryptOldData?tenantId={{tenantId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"RequestInfo\": { \"apiId\": \"sw-services\", \"ver\": \"1.0\" }\n}"
+        }
+      }
+    }
+  ]
+}
