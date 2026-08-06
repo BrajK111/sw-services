@@ -50,10 +50,14 @@ func (r *ConnectionRepository) Update(conn *model.SewerageConnection) error {
 		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(conn).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("connectionid = ?", conn.ID).Delete(&model.ConnectionHolder{}).Error; err != nil {
-			return err
-		}
+		// Only replace connection holders when the caller explicitly provided
+		// a non-empty slice. An omitted/nil holders array means "leave existing
+		// holders untouched" — mapper.MergeIntoModel only sets ConnectionHolders
+		// when the incoming request included them, so this check is safe.
 		if len(conn.ConnectionHolders) > 0 {
+			if err := tx.Where("connectionid = ?", conn.ID).Delete(&model.ConnectionHolder{}).Error; err != nil {
+				return err
+			}
 			if err := tx.Create(&conn.ConnectionHolders).Error; err != nil {
 				return err
 			}

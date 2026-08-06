@@ -111,7 +111,9 @@ func ToModel(d dto.SewerageConnection) *model.SewerageConnection {
 	}
 
 	for _, h := range d.ConnectionHolders {
+		hID := uuid.NewString()
 		m.ConnectionHolders = append(m.ConnectionHolders, model.ConnectionHolder{
+			ID:                   hID,
 			TenantID:             d.TenantID,
 			ConnectionID:         id,
 			Status:               h.Status,
